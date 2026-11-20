@@ -1,0 +1,61 @@
+name: Encore - check ticket prices
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # every hour, at 17 minutes past
+  workflow_dispatch:        # adds a "Run workflow" button on the Actions tab
+    inputs:
+      test_notification:
+        description: "Only send a test notification to my phone"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write           # lets Encore save its price history (state.json)
+  pages: write              # lets Encore publish the dashboard page
+  id-token: write
+
+concurrency:
+  group: encore
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run Encore
+        env:
+          SEATGEEK_CLIENT_ID: ${{ secrets.SEATGEEK_CLIENT_ID }}
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python ticket_bot.py ${{ inputs.test_notification && '--test-notify' || '' }}
+
+      - name: Save price history
+        if: ${{ !inputs.test_notification }}
+        run: |
+          git config user.name "encore-bot"
+          git config user.email "encore-bot@users.noreply.github.com"
+          git add state.json
+          git diff --cached --quiet || git commit -m "Update price history"
+          git push
+
+      - name: Package the dashboard
+        if: ${{ !inputs.test_notification }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Publish the dashboard
+        if: ${{ !inputs.test_notification }}
+        id: deploy
+        uses: actions/deploy-pages@v4
