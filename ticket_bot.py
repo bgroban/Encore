@@ -23,6 +23,7 @@ Usage:
   python ticket_bot.py --dry-run     check prices and print alerts, send nothing
 """
 
+import base64
 import json
 import os
 import sys
@@ -646,11 +647,49 @@ def write_dashboard(cfg, seen, events_state, tm_sales, alert_log, tm_enabled):
     os.makedirs(SITE_DIR, exist_ok=True)
     with open(os.path.join(SITE_DIR, "index.html"), "w", encoding="utf-8") as f:
         f.write(template.replace("__ENCORE_DATA__", payload))
-    icon = os.path.join(HERE, "icon.png")
-    if os.path.exists(icon):
-        with open(icon, "rb") as src, open(os.path.join(SITE_DIR, "icon.png"), "wb") as dst:
-            dst.write(src.read())
+    # The home-screen icon is built into this file, so there's no picture to upload.
+    with open(os.path.join(SITE_DIR, "icon.png"), "wb") as dst:
+        dst.write(base64.b64decode("".join(ICON_PNG_BASE64)))
     print(f"Dashboard written: {len(shows)} shows, {len(tm_sales)} upcoming sales.")
+
+
+# Encore's home-screen icon (a 180x180 PNG), stored as text.
+ICON_PNG_BASE64 = (
+    "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"
+    "AAAAAElFTkSuQmCC"
+)
 
 
 # ---------------------------------------------------------------- main
