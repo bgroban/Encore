@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#E7EAF1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Encore">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>Encore</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #E7EAF1;      /* cool poster stock */
+    --stock: #F8F9FC;      /* ticket card */
+    --ink: #1C2042;        /* navy ink for text */
+    --ink-soft: #5A5F80;
+    --blue: #2D47DC;       /* riso blue */
+    --pink: #FF3D8B;       /* fluorescent pink: deals */
+    --sun: #FFC83A;        /* yellow: last-minute */
+    --rule: #C9CEDD;
+    --stub-w: 112px;
+    --notch: 11px;
+    --font: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.45;
+    font-variation-settings: "wdth" 100;
+    /* faint print grain */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.12 0 0 0 0 0.26 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: max(20px, env(safe-area-inset-top)) 18px calc(48px + env(safe-area-inset-bottom));
+  }
+
+  /* ---------- Wordmark: a two-colour riso print, slightly off-register ---------- */
+  header { padding: 18px 0 6px; }
+  .mark {
+    position: relative;
+    margin: 0;
+    font-size: clamp(76px, 25vw, 148px);
+    line-height: .8;
+    font-weight: 800;
+    font-variation-settings: "wdth" 75, "opsz" 96;
+    letter-spacing: -0.035em;
+    color: var(--blue);
+    mix-blend-mode: multiply;
+  }
+  .mark::before {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    color: var(--pink);
+    transform: translate(5px, 4px);
+    mix-blend-mode: multiply;
+    z-index: -1;
+    animation: register 900ms cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes register {
+    from { transform: translate(-14px, 10px); opacity: 0; }
+    to   { transform: translate(5px, 4px); opacity: 1; }
+  }
+  .status {
+    margin: 18px 0 0;
+    max-width: 34em;
+    color: var(--ink-soft);
+    font-size: 15px;
+  }
+  .status strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Controls ---------- */
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 26px 0 12px;
+  }
+  .tab {
+    flex: none;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    background: transparent;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 7px 14px;
+    cursor: pointer;
+  }
+  .tab .n { font-weight: 400; opacity: .7; margin-left: 4px; }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    font: inherit;
+    font-size: 14px;
+    color: var(--blue);
+    background: transparent;
+    border: 1.5px solid var(--blue);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--blue); color: #fff; }
+  .search {
+    flex: 1 1 180px;
+    min-width: 0;
+    font: inherit;
+    font-size: 16px; /* 16px stops iPhone zooming in */
+    color: var(--ink);
+    background: var(--stock);
+    border: 1.5px solid var(--rule);
+    border-radius: 8px;
+    padding: 8px 12px;
+  }
+  .search::placeholder { color: var(--ink-soft); }
+  .sort {
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink-soft);
+    background: none;
+    border: 0;
+    padding: 4px 0;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  button:focus-visible, input:focus-visible, a:focus-visible {
+    outline: 3px solid var(--pink);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Ticket stubs ---------- */
+  .list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .ticket {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr var(--stub-w);
+    background: var(--stock);
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    /* the two half-circle notches at the tear line */
+    -webkit-mask:
+      radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+      radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+            mask:
+      radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+      radial-gradient(circle var(--notch) at calc(100% - var(--stub-w)) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  }
+  .ticket:active { transform: scale(.99); }
+  .body { padding: 14px 14px 13px 16px; min-width: 0; }
+  .when { font-size: 14px; color: var(--ink-soft); }
+  .artist {
+    margin: 2px 0 2px;
+    font-size: 25px;
+    line-height: 1.02;
+    font-weight: 700;
+    font-variation-settings: "wdth" 80, "opsz" 48;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+  .where { font-size: 15px; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 9px; }
+  .badge {
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 4px;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .badge.hot { background: var(--sun); }
+  .badge.big { background: none; border: 1.5px solid var(--blue); color: var(--blue); padding: 3.5px 7px; }
+  .trend { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft); }
+  .trend svg { display: block; }
+
+  .stub {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1px;
+    padding: 12px 12px 12px 15px;
+    border-left: 2px dashed var(--rule);
+    background: var(--stock);
+  }
+  .price {
+    font-size: 34px;
+    line-height: .95;
+    font-weight: 800;
+    font-variation-settings: "wdth" 75, "opsz" 72;
+    letter-spacing: -0.02em;
+    font-feature-settings: "tnum";
+  }
+  .price-label { font-size: 12.5px; color: var(--ink-soft); }
+  .from { margin-top: 6px; font-size: 13px; }
+  .ticket.deal .stub { background: var(--pink); border-left-color: rgba(28,32,66,.35); color: var(--ink); }
+  .ticket.deal .price-label { color: var(--ink); opacity: .78; }
+
+  /* On-sale-soon variant: countdown on the stub */
+  .ticket.sale .stub { background: var(--blue); color: #fff; border-left-color: rgba(255,255,255,.45); }
+  .ticket.sale .price { font-size: 28px; }
+  .ticket.sale .price-label { color: #fff; opacity: .85; }
+  .star { color: var(--pink); }
+
+  /* ---------- Alerts list ---------- */
+  .alert {
+    padding: 12px 0;
+    border-bottom: 1.5px solid var(--rule);
+  }
+  .alert a { color: inherit; text-decoration: none; display: block; }
+  .alert-title { font-weight: 600; }
+  .alert-body { font-size: 14px; color: var(--ink-soft); }
+  .alert-time { font-size: 13px; color: var(--ink-soft); }
+
+  .empty {
+    padding: 34px 20px;
+    border: 2px dashed var(--rule);
+    border-radius: 10px;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+  .empty strong { display: block; color: var(--ink); font-size: 18px; margin-bottom: 4px; }
+  footer {
+    margin-top: 34px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    max-width: 34em;
+  }
+
+  @media (max-width: 380px) {
+    :root { --stub-w: 98px; }
+    .artist { font-size: 22px; }
+    .price { font-size: 29px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mark::before { animation: none; }
+    .ticket:active { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="mark" data-text="Encore">Encore</h1>
+    <p class="status" id="status"></p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="What to show" id="tabs"></nav>
+
+  <div class="filters" id="filters">
+    <div class="chips" id="chips" aria-label="Cities"></div>
+    <input class="search" id="search" type="search" placeholder="Search artists or venues" aria-label="Search artists or venues">
+    <button class="sort" id="sort" type="button"></button>
+  </div>
+
+  <main id="results" aria-live="polite"></main>
+
+  <footer>
+    Encore checks prices every hour and sends deals to the ntfy app on your phone.
+    A pink stub means typical seats fit your budget: <span id="budgets"></span>.
+  </footer>
+</div>
+
+<script id="encore-data" type="application/json">__ENCORE_DATA__</script>
+<script>
+(function () {
+  "use strict";
+  var DATA = JSON.parse(document.getElementById("encore-data").textContent);
+  var state = { tab: "deals", cities: {}, q: "", sort: "soonest" };
+  DATA.cities.forEach(function (c) { state.cities[c] = true; });
+
+  // ---------- small helpers ----------
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function money(v) { return v == null ? "–" : "$" + Math.round(v).toLocaleString("en-US"); }
+  function showDate(local) {
+    var d = new Date(local);
+    if (isNaN(d)) return "Date to be announced";
+    return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) +
+      ", " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  }
+  function ago(iso) {
+    var mins = Math.round((Date.now() - new Date(iso)) / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return mins + (mins === 1 ? " minute ago" : " minutes ago");
+    var h = Math.round(mins / 60);
+    if (h < 24) return h + (h === 1 ? " hour ago" : " hours ago");
+    var d = Math.round(h / 24);
+    return d + (d === 1 ? " day ago" : " days ago");
+  }
+  function countdown(iso) {
+    var mins = Math.round((new Date(iso) - Date.now()) / 60000);
+    if (mins <= 0) return { big: "Now", small: "on sale" };
+    if (mins < 60) return { big: mins + "m", small: "until sale" };
+    var h = Math.round(mins / 60);
+    if (h < 48) return { big: h + "h", small: "until sale" };
+    return { big: Math.round(h / 24) + "d", small: "until sale" };
+  }
+  function cityOf(item) {
+    // Match the show to one of the three areas (suburb venues use their area's name).
+    if (item.area) return item.area;
+    var c = (item.city || "").toLowerCase();
+    for (var i = 0; i < DATA.cities.length; i++) {
+      if (c.indexOf(DATA.cities[i].toLowerCase()) !== -1) return DATA.cities[i];
+    }
+    return item.city;
+  }
+  function matches(item) {
+    var area = cityOf(item);
+    if (DATA.cities.indexOf(area) !== -1 && !state.cities[area]) return false;
+    if (!state.q) return true;
+    var hay = [item.artist, item.title, item.venue, item.city].join(" ").toLowerCase();
+    return hay.indexOf(state.q) !== -1;
+  }
+  function sparkline(points) {
+    if (!points || points.length < 2) return null;
+    var w = 64, h = 18, min = Math.min.apply(null, points), max = Math.max.apply(null, points);
+    var span = max - min || 1;
+    var d = points.map(function (p, i) {
+      var x = (i / (points.length - 1)) * w;
+      var y = h - 2 - ((p - min) / span) * (h - 4);
+      return x.toFixed(1) + "," + y.toFixed(1);
+    }).join(" ");
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("width", w); svg.setAttribute("height", h);
+    svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+    svg.setAttribute("aria-hidden", "true");
+    var line = document.createElementNS(ns, "polyline");
+    line.setAttribute("points", d);
+    line.setAttribute("fill", "none");
+    line.setAttribute("stroke", "#2D47DC");
+    line.setAttribute("stroke-width", "2");
+    line.setAttribute("stroke-linejoin", "round");
+    line.setAttribute("stroke-linecap", "round");
+    svg.appendChild(line);
+    return svg;
+  }
+
+  // ---------- data views ----------
+  function shows() {
+    var list = DATA.shows.filter(matches);
+    if (state.tab === "deals") list = list.filter(function (s) { return s.deal; });
+    list.sort(function (a, b) {
+      if (state.sort === "cheapest") return (a.median || 1e9) - (b.median || 1e9);
+      return String(a.date).localeCompare(String(b.date));
+    });
+    return list;
+  }
+  function sales() { return DATA.sales.filter(matches); }
+
+  // ---------- rendering ----------
+  function showTicket(s) {
+    var a = el("a", "ticket" + (s.deal ? " deal" : ""));
+    a.href = s.url || "#";
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.setAttribute("aria-label", s.artist + ", " + showDate(s.date) + ", typical price " + money(s.median));
+
+    var body = el("div", "body");
+    body.appendChild(el("div", "when", showDate(s.date)));
+    body.appendChild(el("h2", "artist", s.artist));
+    body.appendChild(el("div", "where", s.venue + (s.city ? ", " + s.city : "")));
+    var meta = el("div", "meta");
+    if (s.last_minute) meta.appendChild(el("span", "badge hot", "Last-minute prices"));
+    if (s.big_act) meta.appendChild(el("span", "badge big", money(s.budget) + " budget"));
+    if (s.comedy) meta.appendChild(el("span", "badge", "Comedy"));
+    var spark = sparkline(s.history);
+    if (spark) {
+      var first = s.history[0], last = s.history[s.history.length - 1];
+      var pct = first ? Math.round((1 - last / first) * 100) : 0;
+      var t = el("span", "trend");
+      t.appendChild(spark);
+      var label = pct > 0 ? "Down " + pct + "%" : pct < 0 ? "Up " + Math.abs(pct) + "%" : "Steady";
+      t.appendChild(document.createTextNode(label));
+      t.title = "Cheapest ticket since Encore started watching";
+      meta.appendChild(t);
+    }
+    if (meta.childNodes.length) body.appendChild(meta);
+
+    var stub = el("div", "stub");
+    stub.appendChild(el("div", "price", money(s.median)));
+    stub.appendChild(el("div", "price-label", "typical seat"));
+    stub.appendChild(el("div", "from", "From " + money(s.lowest)));
+    a.appendChild(body);
+    a.appendChild(stub);
+    return a;
+  }
+
+  function saleTicket(s) {
+    var a = el("a", "ticket sale");
+    a.href = s.url || "#";
+    a.target = "_blank";
+    a.rel = "noopener";
+    var body = el("div", "body");
+    var saleTime = new Date(s.sale_at).toLocaleString("en-US",
+      { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    body.appendChild(el("div", "when", s.sale_name + " opens " + saleTime));
+    body.appendChild(el("h2", "artist", s.artist));
+    body.appendChild(el("div", "where", s.venue + (s.city ? ", " + s.city : "") + ". Show on " + showDate(s.date)));
+    var meta = el("div", "meta");
+    if (s.has_access) {
+      var b = el("span", "badge", "");
+      var star = el("span", "star", "★ ");
+      b.appendChild(star);
+      b.appendChild(document.createTextNode("You have access"));
+      meta.appendChild(b);
+    }
+    if (s.face_min) meta.appendChild(el("span", "badge", "Face value " + money(s.face_min) + "–" + money(s.face_max)));
+    if (s.comedy) meta.appendChild(el("span", "badge", "Comedy"));
+    if (meta.childNodes.length) body.appendChild(meta);
+    var c = countdown(s.sale_at);
+    var stub = el("div", "stub");
+    stub.appendChild(el("div", "price", c.big));
+    stub.appendChild(el("div", "price-label", c.small));
+    a.appendChild(body);
+    a.appendChild(stub);
+    return a;
+  }
+
+  function empty(title, text) {
+    var box = el("div", "empty");
+    box.appendChild(el("strong", null, title));
+    box.appendChild(document.createTextNode(text));
+    return box;
+  }
+
+  function renderTabs() {
+    var tabs = document.getElementById("tabs");
+    tabs.innerHTML = "";
+    var deals = DATA.shows.filter(function (s) { return s.deal && matches(s); }).length;
+    var defs = [
+      ["deals", "Deals", deals],
+      ["all", "All shows", DATA.shows.filter(matches).length],
+      ["sales", "On sale soon", sales().length],
+      ["alerts", "Alerts", null]
+    ];
+    if (!DATA.ticketmaster) defs.splice(2, 1);
+    defs.forEach(function (d) {
+      var b = el("button", "tab", d[1]);
+      b.type = "button";
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", state.tab === d[0] ? "true" : "false");
+      if (d[2] != null) b.appendChild(el("span", "n", String(d[2])));
+      b.onclick = function () { state.tab = d[0]; render(); };
+      tabs.appendChild(b);
+    });
+  }
+
+  function renderChips() {
+    var box = document.getElementById("chips");
+    box.innerHTML = "";
+    DATA.cities.forEach(function (c) {
+      var b = el("button", "chip", c);
+      b.type = "button";
+      b.setAttribute("aria-pressed", state.cities[c] ? "true" : "false");
+      b.onclick = function () {
+        state.cities[c] = !state.cities[c];
+        // Never let every city be switched off.
+        var any = DATA.cities.some(function (x) { return state.cities[x]; });
+        if (!any) DATA.cities.forEach(function (x) { state.cities[x] = true; });
+        render();
+      };
+      box.appendChild(b);
+    });
+    var sort = document.getElementById("sort");
+    sort.textContent = state.sort === "soonest" ? "Sorted by date" : "Sorted by price";
+    sort.style.display = (state.tab === "deals" || state.tab === "all") ? "" : "none";
+    document.getElementById("filters").style.display = state.tab === "alerts" ? "none" : "";
+  }
+
+  function render() {
+    renderTabs();
+    renderChips();
+    var out = document.getElementById("results");
+    out.innerHTML = "";
+    var ul = el("ul", "list");
+    function add(node) { var li = el("li"); li.appendChild(node); ul.appendChild(li); }
+
+    if (state.tab === "deals" || state.tab === "all") {
+      var list = shows();
+      if (!list.length) {
+        out.appendChild(state.tab === "deals"
+          ? empty("No deals right now", "Nothing has typical seats under your budget yet. Encore checks every hour and will notify you when that changes.")
+          : empty("No shows match", "Try turning another city back on or clearing the search."));
+        return;
+      }
+      list.forEach(function (s) { add(showTicket(s)); });
+    } else if (state.tab === "sales") {
+      var sl = sales();
+      if (!sl.length) {
+        out.appendChild(empty("No sales coming up", "When a popular act announces a show near you, its presale and on-sale times show up here."));
+        return;
+      }
+      sl.forEach(function (s) { add(saleTicket(s)); });
+    } else {
+      if (!DATA.alerts.length) {
+        out.appendChild(empty("No alerts yet", "Alerts Encore sends to your phone are listed here too."));
+        return;
+      }
+      DATA.alerts.forEach(function (a) {
+        var li = el("li", "alert");
+        var inner = a.url ? el("a") : el("div");
+        if (a.url) { inner.href = a.url; inner.target = "_blank"; inner.rel = "noopener"; }
+        inner.appendChild(el("div", "alert-title", a.title));
+        if (a.body) inner.appendChild(el("div", "alert-body", a.body));
+        inner.appendChild(el("div", "alert-time", ago(a.at)));
+        li.appendChild(inner);
+        ul.appendChild(li);
+      });
+    }
+    out.appendChild(ul);
+  }
+
+  // ---------- status line ----------
+  var cities = DATA.cities.slice();
+  var cityText = cities.length > 1 ? cities.slice(0, -1).join(", ") + " and " + cities[cities.length - 1] : cities[0];
+  var status = document.getElementById("status");
+  status.innerHTML = "";
+  status.appendChild(document.createTextNode("Watching "));
+  status.appendChild(el("strong", null, DATA.shows.length + " shows"));
+  status.appendChild(document.createTextNode(" in " + cityText + ". Updated " + ago(DATA.generated_at) + "."));
+  document.getElementById("budgets").textContent =
+    money(DATA.budget) + " for most shows, " + money(DATA.big_budget) + " for big acts and K-pop";
+
+  document.getElementById("search").addEventListener("input", function (e) {
+    state.q = e.target.value.trim().toLowerCase();
+    render();
+  });
+  document.getElementById("sort").addEventListener("click", function () {
+    state.sort = state.sort === "soonest" ? "cheapest" : "soonest";
+    render();
+  });
+  if (!DATA.shows.some(function (s) { return s.deal; }) && DATA.shows.length) state.tab = "all";
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+{
+  "max_price": 200,
+  "premium_max_price": 350,
+  "premium_min_popularity_score": 0.75,
+  "premium_genre_keywords": ["k-pop", "kpop"],
+  "drop_alert_percent": 15,
+  "min_popularity_score": 0.5,
+  "days_ahead": 180,
+  "radius_miles": 30,
+  "max_alerts_per_run": 8,
+  "max_pages": 5,
+  "ticketmaster_classifications": ["Pop", "K-Pop", "Comedy"],
+  "ticketmaster_min_artist_score": 0.5,
+  "onsale_reminder_hours": 24,
+  "presale_access": [],
+  "final_days_before_show": 2,
+  "final_drop_alert_percent": 10,
+  "yearly_reminders": [
+    {
+      "month": 4,
+      "day": 15,
+      "title": "📅 Live Nation $30 ticket sale is coming",
+      "message": "Live Nation's yearly $30 all-in ticket sale usually starts in late April. Check the site for dates and the Houston, Dallas and Austin shows included, and join the early-access list if there is one.",
+      "url": "https://www.livenation.com"
+    },
+    {
+      "month": 1,
+      "day": 5,
+      "title": "📅 Check your presale access",
+      "message": "Big spring and summer tours get announced around now. Make sure you're on the email lists for Toyota Center, Moody Center and American Airlines Center, and follow your favorite artists' fan clubs for presale codes.",
+      "url": "https://www.ticketmaster.com"
+    }
+  ],
+  "timezone": "America/Chicago",
+  "categories": ["concert", "comedy"],
+  "concert_genre_keywords": ["pop", "adult contemporary", "soft rock", "k-pop", "kpop"],
+  "always_watch": [],
+  "never_watch": [],
+  "cities": [
+    { "name": "Houston", "lat": 29.7604, "lon": -95.3698 },
+    { "name": "Dallas", "lat": 32.7767, "lon": -96.7970 },
+    { "name": "Austin", "lat": 30.2672, "lon": -97.7431 }
+  ]
+}
