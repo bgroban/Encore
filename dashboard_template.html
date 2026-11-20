@@ -220,6 +220,17 @@
   .ticket.deal .stub { background: var(--pink); border-left-color: rgba(28,32,66,.35); color: var(--ink); }
   .ticket.deal .price-label { color: var(--ink); opacity: .78; }
 
+  /* No resale price: a quiet stub that invites a tap */
+  .price-text {
+    font-size: 19px;
+    line-height: 1.05;
+    font-weight: 700;
+    font-variation-settings: "wdth" 80, "opsz" 36;
+    color: var(--blue);
+  }
+  .ticket.noprice .stub, .ticket.face .stub { background: var(--paper); border-left-color: var(--rule); }
+  .ticket.face .from { color: var(--blue); font-weight: 600; }
+
   /* On-sale-soon variant: countdown on the stub */
   .ticket.sale .stub { background: var(--blue); color: #fff; border-left-color: rgba(255,255,255,.45); }
   .ticket.sale .price { font-size: 28px; }
@@ -383,14 +394,15 @@
     a.href = s.url || "#";
     a.target = "_blank";
     a.rel = "noopener";
-    a.setAttribute("aria-label", s.artist + ", " + showDate(s.date) + ", typical price " + money(s.median));
+    a.setAttribute("aria-label", s.artist + ", " + showDate(s.date) +
+      (s.median != null ? ", typical price " + money(s.median) : ", open to check price"));
 
     var body = el("div", "body");
     body.appendChild(el("div", "when", showDate(s.date)));
     body.appendChild(el("h2", "artist", s.artist));
     body.appendChild(el("div", "where", s.venue + (s.city ? ", " + s.city : "")));
     var meta = el("div", "meta");
-    if (s.last_minute) meta.appendChild(el("span", "badge hot", "Last-minute prices"));
+    if (s.last_minute && s.median != null) meta.appendChild(el("span", "badge hot", "Last-minute prices"));
     if (s.big_act) meta.appendChild(el("span", "badge big", money(s.budget) + " budget"));
     if (s.comedy) meta.appendChild(el("span", "badge", "Comedy"));
     var spark = sparkline(s.history);
@@ -407,9 +419,21 @@
     if (meta.childNodes.length) body.appendChild(meta);
 
     var stub = el("div", "stub");
-    stub.appendChild(el("div", "price", money(s.median)));
-    stub.appendChild(el("div", "price-label", "typical seat"));
-    stub.appendChild(el("div", "from", "From " + money(s.lowest)));
+    if (s.median != null) {
+      stub.appendChild(el("div", "price", money(s.median)));
+      stub.appendChild(el("div", "price-label", "typical seat"));
+      stub.appendChild(el("div", "from", "From " + money(s.lowest)));
+    } else if (s.face && s.face.min) {
+      // No resale price from SeatGeek: show Ticketmaster's face value instead.
+      a.classList.add("face");
+      stub.appendChild(el("div", "price", money(s.face.min)));
+      stub.appendChild(el("div", "price-label", "face value from"));
+      stub.appendChild(el("div", "from", "Check price"));
+    } else {
+      a.classList.add("noprice");
+      stub.appendChild(el("div", "price-text", "Check price"));
+      stub.appendChild(el("div", "price-label", "on SeatGeek"));
+    }
     a.appendChild(body);
     a.appendChild(stub);
     return a;
@@ -509,7 +533,9 @@
       var list = shows();
       if (!list.length) {
         out.appendChild(state.tab === "deals"
-          ? empty("No deals right now", "Nothing has typical seats under your budget yet. Encore checks every hour and will notify you when that changes.")
+          ? (DATA.prices_available
+              ? empty("No deals right now", "Nothing has typical seats under your budget yet. Encore checks every hour and will notify you when that changes.")
+              : empty("Deals need resale prices", "SeatGeek isn't sharing prices with Encore yet, so deals can't be spotted here. Open a show from All shows and tap the heart on SeatGeek to get its own price alerts."))
           : empty("No shows match", "Try turning another city back on or clearing the search."));
         return;
       }

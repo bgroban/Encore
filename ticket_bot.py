@@ -505,7 +505,7 @@ def run_ticketmaster(cfg, state, client_id, tm_key, first_run, fetch_tm=fetch_tm
             except urllib.error.HTTPError as e:
                 print(f"Ticketmaster said {e.code} for {city['name']}/{classification}. "
                       "A 401 means the Ticketmaster key is wrong. Skipping Ticketmaster this run.")
-                return [], state.get("tm_events"), 0, []
+                return [], state.get("tm_events"), 0, [], {}
             for ev in events:
                 if ev.get("id") in seen:
                     continue
@@ -517,12 +517,22 @@ def run_ticketmaster(cfg, state, client_id, tm_key, first_run, fetch_tm=fetch_tm
     alerts = []
     new_state = {}
     upcoming_sales = []
+    faces = {}  # artist+date -> Ticketmaster face value, to fill in SeatGeek shows without prices
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     for event_id, (ev, score) in seen.items():
         budget = tm_budget(ev, score, cfg)
         ev_alerts, ev_state = check_tm_event(ev, tm_state.get(event_id), budget, cfg)
         new_state[event_id] = ev_state
         upcoming_sales.extend(tm_dashboard_items(ev, budget, now_iso, cfg))
+        prices = ev.get("priceRanges") or []
+        start = (ev.get("dates") or {}).get("start") or {}
+        if start.get("localDate"):
+            key = f"{tm_artist(ev).lower().strip()}|{start['localDate']}"
+            faces[key] = {
+                "min": min((p.get("min") or 0) for p in prices) if prices else None,
+                "max": max((p.get("max") or 0) for p in prices) if prices else None,
+                "url": ev.get("url"),
+            }
         if not first_run:
             for title, body in ev_alerts:
                 alerts.append((f"{title}: {tm_artist(ev)}", body, ev.get("url")))
@@ -533,7 +543,7 @@ def run_ticketmaster(cfg, state, client_id, tm_key, first_run, fetch_tm=fetch_tm
     for event_id, old in tm_state.items():
         if event_id not in new_state and (old.get("date") or "9999") > now_s:
             new_state[event_id] = old
-    return alerts, new_state, len(seen), upcoming_sales
+    return alerts, new_state, len(seen), upcoming_sales, faces
 
 
 def tm_dashboard_items(ev, budget, now_iso, cfg):
@@ -598,7 +608,8 @@ SITE_DIR = os.path.join(HERE, "site")
 TEMPLATE_PATH = os.path.join(HERE, "dashboard_template.html")
 
 
-def write_dashboard(cfg, seen, events_state, tm_sales, alert_log, tm_enabled):
+def write_dashboard(cfg, seen, events_state, tm_sales, alert_log, tm_enabled, tm_faces=None):
+    tm_faces = tm_faces or {}
     shows = []
     for event_id, (ev, city_name) in seen.items():
         stats = ev.get("stats") or {}
@@ -626,6 +637,7 @@ def write_dashboard(cfg, seen, events_state, tm_sales, alert_log, tm_enabled):
                       or "comedy" in " ".join(genre_names(ev)),
             "history": [h[1] for h in hist if h[1] is not None],
             "url": ev.get("url"),
+            "face": tm_faces.get(f"{short_title(ev).lower().strip()}|{str(ev.get('datetime_local'))[:10]}"),
         })
     data = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -633,6 +645,7 @@ def write_dashboard(cfg, seen, events_state, tm_sales, alert_log, tm_enabled):
         "budget": cfg["max_price"],
         "big_budget": cfg.get("premium_max_price", cfg["max_price"]),
         "shows": shows,
+        "prices_available": any(s["median"] is not None or s["lowest"] is not None for s in shows),
         "sales": sorted(tm_sales, key=lambda s: s["sale_at"]),
         "alerts": alert_log,
         "ticketmaster": tm_enabled,
@@ -735,9 +748,9 @@ def run(dry_run=False, fetch=fetch_events, fetch_tm=fetch_tm_events):
             alerts.append((ev, city_name, reasons))
 
     # Ticketmaster is optional: it only runs if its key has been added.
-    tm_alerts, tm_state, tm_count, tm_sales = [], state.get("tm_events"), 0, []
+    tm_alerts, tm_state, tm_count, tm_sales, tm_faces = [], state.get("tm_events"), 0, [], {}
     if tm_key:
-        tm_alerts, tm_state, tm_count, tm_sales = run_ticketmaster(cfg, state, client_id, tm_key, tm_first_run, fetch_tm)
+        tm_alerts, tm_state, tm_count, tm_sales, tm_faces = run_ticketmaster(cfg, state, client_id, tm_key, tm_first_run, fetch_tm)
     else:
         print("Ticketmaster: no TICKETMASTER_API_KEY set, skipping.")
 
@@ -796,7 +809,7 @@ def run(dry_run=False, fetch=fetch_events, fetch_tm=fetch_tm_events):
     yearly_sent = send_yearly_reminders(cfg, state.get("yearly_sent", []), topic, dry_run)
 
     alert_log = (SENT_LOG + state.get("alert_log", []))[:30]
-    write_dashboard(cfg, seen, new_events_state, tm_sales, alert_log, tm_enabled=bool(tm_key))
+    write_dashboard(cfg, seen, new_events_state, tm_sales, alert_log, tm_enabled=bool(tm_key), tm_faces=tm_faces)
 
     # Keep history only for events still upcoming (drops past shows automatically).
     if not dry_run:
